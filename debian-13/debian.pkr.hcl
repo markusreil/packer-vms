@@ -1,0 +1,95 @@
+packer {
+  required_plugins {
+    proxmox = {
+      version = ">= 1.1.2"
+      source  = "github.com/hashicorp/proxmox"
+    }
+  }
+}
+
+variable "pm_api_url" {
+  type = string
+  default = "https://pve4.home.arpa:8006/api2/json"
+}
+variable "pve4_packer_token_id" {
+  type = string
+  default = "root@pam!packer_token"
+}
+variable "pve4_packer_token_secret" {
+  type = string
+  default = "your-api-token-secret"
+}
+
+source "proxmox-iso" "debian-docker" {
+  proxmox_url              = var.pm_api_url
+  username                 = var.pve4_packer_token_id
+  token                    = var.pve4_packer_token_secret
+  insecure_skip_tls_verify = true
+
+  node                 = "pve4"
+  vm_id                = "9000"
+  vm_name              = "debian-13-template"
+  template_description = "Debian 13 Template"
+
+  cores    = 2
+  memory   = 2048
+  os       = "l26"
+
+  qemu_agent = true
+
+  network_adapters {
+    model  = "virtio"
+    bridge = "vmbr0"
+  }
+
+
+  disks {
+    disk_size         = "20G"
+    storage_pool      = "local-lvm" # Change to your Proxmox storage name
+    type              = "scsi"
+    discard           = true
+  }
+
+  # Ensure the Debian Netinst ISO is uploaded to your Proxmox 'local' storage first
+  boot_iso {
+    iso_file = "local:iso/debian-13.6.0-amd64-netinst.iso"
+    unmount = true
+  }
+
+  http_directory   = "http"
+  boot_command     = [
+    "<esc><wait>",
+    "install ",
+    "fb=false ",
+    "debconf/priority=critical ",
+    "auto=true ",
+    "ipv6.disable=1 ",
+    "netcfg/get_hostname=debian-template ",
+    "url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/debian.cfg ",
+    "<enter>"
+  ]
+
+  ssh_username     = "debian"
+  ssh_password     = "debian"
+  ssh_timeout      = "15m"
+}
+
+build {
+  sources = ["source.proxmox-iso.debian-docker"]
+
+  # Bash script block to install Docker natively
+  provisioner "shell" {
+    inline = [
+      "echo '>>> Installing Basics...'",
+      "sudo apt-get update",
+      "sudo apt-get install -y ca-certificates curl gnupg",
+      "sudo install -m 0755 -d /etc/apt/keyrings",
+      "sudo apt-get update",
+
+      "echo '>>> Cleaning up network machine-id to prevent DHCP conflicts...'",
+      "sudo truncate -s 0 /etc/machine-id",
+      "sudo rm -f /var/lib/dbus/machine-id",
+      "sudo ln -s /etc/machine-id /var/lib/dbus/machine-id"
+    ]
+  }
+}
