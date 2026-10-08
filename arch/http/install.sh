@@ -26,7 +26,7 @@ mkdir -p /mnt/boot
 mount "$EFI_PART" /mnt/boot
 
 pacstrap -K /mnt base linux linux-firmware sudo openssh grub efibootmgr \
-    virtualbox-guest-utils-nox
+    python virtualbox-guest-utils-nox
 genfstab -U /mnt >> /mnt/etc/fstab
 
 arch-chroot /mnt ln -sf /usr/share/zoneinfo/UTC /etc/localtime
