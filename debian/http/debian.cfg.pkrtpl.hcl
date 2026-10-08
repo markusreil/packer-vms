@@ -13,14 +13,35 @@ d-i mirror/http/proxy string
 d-i passwd/root-login boolean false
 d-i passwd/user-fullname string Debian User
 d-i passwd/username string debian
-d-i passwd/user-password password debian
-d-i passwd/user-password-again password debian
+d-i passwd/user-password password ${password}
+d-i passwd/user-password-again password ${password}
 
 d-i clock-setup/utc boolean true
 d-i time/zone string UTC
 
 d-i partman-auto/method string regular
-d-i partman-auto/choose_recipe select atomic
+d-i partman-auto/choose_recipe select efi
+d-i partman-auto/expert_recipe string                         \
+      efi ::                                                  \
+              512 512 512 fat32                               \
+                      $primary{ }                             \
+                      $bootable{ }                            \
+                      method{ efi }                           \
+                      format{ }                               \
+              .                                               \
+              0 0 0 free                                      \
+                      method{ swap }                          \
+                      format{ }                               \
+              .                                               \
+              1000 10000 -1 ext4                              \
+                      $primary{ }                             \
+                      method{ format }                        \
+                      format{ }                               \
+                      use_filesystem{ }                       \
+                      filesystem{ ext4 }                      \
+                      mountpoint{ / }                         \
+              .
+
 d-i partman-partitioning/confirm_write_new_label boolean true
 d-i partman/choose_partition select finish
 # Add these two specific lines to bypass the partition validation prompts:
@@ -37,16 +58,15 @@ apt-cdrom-setup apt-setup/cdrom/set-first boolean false
 d-i apt-setup/non-free-firmware boolean true
 d-i apt-setup/non-free boolean true
 d-i apt-setup/contrib boolean true
-d-i pkgsel/include string qemu-guest-agent openssh-server sudo curl
-
-d-i pkgsel/include string openssh-server qemu-guest-agent
+d-i pkgsel/include string openssh-server qemu-guest-agent sudo curl ca-certificates
 d-i pkgsel/upgrade select safe-upgrade
 popularity-contest popularity-contest/participate boolean false
 tasksel tasksel/first multiselect standard
 
 d-i grub-installer/only_debian boolean true
-d-i grub-installer/with_other_os boolean true
+d-i grub-installer/with_other_os boolean false
 d-i grub-installer/bootdev string default
+d-i grub-installer/force-efi-extra-removable boolean true
 
 d-i preseed/late_command string \
     echo 'debian ALL=(ALL) NOPASSWD: ALL' > /target/etc/sudoers.d/debian; \

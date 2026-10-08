@@ -1,7 +1,7 @@
 packer {
   required_plugins {
     proxmox = {
-      version = ">= 1.1.2"
+      version = ">= 1.2.4"
       source  = "github.com/hashicorp/proxmox"
     }
   }
@@ -13,11 +13,16 @@ variable "pm_api_url" {
 }
 variable "pve4_packer_token_id" {
   type = string
-  default = "root@pam!packer_token"
+  default = "packer@pve!packer-token"
 }
 variable "pve4_packer_token_secret" {
   type = string
   default = "your-api-token-secret"
+}
+
+variable "ssh_username" {
+  type    = string
+  default = "debian"
 }
 
 source "proxmox-iso" "debian-docker" {
@@ -31,9 +36,19 @@ source "proxmox-iso" "debian-docker" {
   vm_name              = "debian-13-template"
   template_description = "Debian 13 Template"
 
-  cores    = 2
-  memory   = 2048
+  machine  = "q35"
+  cores    = var.cpus
+  memory   = var.memory
   os       = "l26"
+  bios     = "ovmf"
+
+  scsi_controller = "virtio-scsi-single"
+
+  efi_config {
+    efi_storage_pool  = "local-lvm"  # Replace with your Proxmox storage pool name
+    efi_type           = "4m"         # Standard modern 4MB EFI type
+    pre_enrolled_keys = false         # Set to true if you need Secure Boot keys pre-loaded
+  }
 
   qemu_agent = true
 
@@ -41,7 +56,6 @@ source "proxmox-iso" "debian-docker" {
     model  = "virtio"
     bridge = "vmbr0"
   }
-
 
   disks {
     disk_size         = "20G"
@@ -56,21 +70,30 @@ source "proxmox-iso" "debian-docker" {
     unmount = true
   }
 
-  http_directory   = "http"
+  http_content     = {
+    "/debian.cfg" = templatefile("../../http/debian.cfg.pkrtpl.hcl", {
+      password = var.ssh_password
+    })
+  }
   boot_command     = [
-    "<esc><wait>",
-    "install ",
+    "<wait>",
+    "c",
+    "<wait><wait>",
+    "linux /install.amd/vmlinuz ",
     "fb=false ",
     "debconf/priority=critical ",
     "auto=true ",
     "ipv6.disable=1 ",
     "netcfg/get_hostname=debian-template ",
+    "grub-installer/force-efi-extra-removable=true ",
     "url=http://{{ .HTTPIP }}:{{ .HTTPPort }}/debian.cfg ",
-    "<enter>"
+    "<enter>",
+    "initrd /install.amd/initrd.gz<enter>",
+    "boot<enter>"
   ]
 
-  ssh_username     = "debian"
-  ssh_password     = "debian"
+  ssh_username     = var.ssh_username
+  ssh_password     = var.ssh_password
   ssh_timeout      = "15m"
 }
 
