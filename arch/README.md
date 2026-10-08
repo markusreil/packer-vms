@@ -21,7 +21,7 @@ Unlike Debian there is no preseed: the template boots archiso (which
 auto-logs in as root), sets a root password and starts sshd via
 `boot_command`, then runs `http/install.sh` over SSH. That script wipes
 `/dev/sda` (512MB EFI + ext4 root, no swap), pacstraps a minimal system
-with GRUB `--removable`, creates the `arch` user with passwordless sudo,
+with GRUB `--removable`, creates the `linux` user with passwordless sudo,
 and finishes the install in place. There is deliberately no reboot: the
 ISO stays attached, so rebooting would boot back into archiso. Packer
 shuts the live VM down after provisioning and exports the disk, which
@@ -43,5 +43,5 @@ From repo root:
 Validate without building:
 
 ```bash
-packer validate arch/rolling/virtualbox
+packer validate -var-file=common.pkrvars.hcl arch/rolling/virtualbox
 ```

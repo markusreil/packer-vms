@@ -1,1 +1,1 @@
-../../../../variables.pkr.hcl
+../../../variables.pkr.hcl

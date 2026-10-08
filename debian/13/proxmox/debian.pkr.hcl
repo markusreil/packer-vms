@@ -20,11 +20,6 @@ variable "pve4_packer_token_secret" {
   default = "your-api-token-secret"
 }
 
-variable "ssh_username" {
-  type    = string
-  default = "debian"
-}
-
 source "proxmox-iso" "debian-docker" {
   proxmox_url              = var.pm_api_url
   username                 = var.pve4_packer_token_id
@@ -58,7 +53,7 @@ source "proxmox-iso" "debian-docker" {
   }
 
   disks {
-    disk_size         = "20G"
+    disk_size         = var.disk_size_proxmox
     storage_pool      = "local-lvm" # Change to your Proxmox storage name
     type              = "scsi"
     discard           = true
@@ -72,7 +67,8 @@ source "proxmox-iso" "debian-docker" {
 
   http_content     = {
     "/debian.cfg" = templatefile("../../http/debian.cfg.pkrtpl.hcl", {
-      password = var.ssh_password
+      username = var.linux_user_name
+      password = var.linux_user_password
     })
   }
   boot_command     = [
@@ -92,8 +88,8 @@ source "proxmox-iso" "debian-docker" {
     "boot<enter>"
   ]
 
-  ssh_username     = var.ssh_username
-  ssh_password     = var.ssh_password
+  ssh_username     = var.linux_user_name
+  ssh_password     = var.linux_user_password
   ssh_timeout      = "15m"
 }
 

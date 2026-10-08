@@ -10,8 +10,10 @@ each host under it owns only its builder template.
 .
 ├── README.md               # this file (generic usage)
 ├── AGENTS.md               # agent working agreements
-├── common.pkrvars.hcl       # shared non-secret defaults (login passwords)
+├── common.pkrvars.hcl       # shared non-secret defaults (login, disk, tuning)
+├── variables.pkr.hcl       # shared declarations (symlinked into templates)
 ├── run.sh                  # build helper (secrets always from $HOME)
+├── vm.sh                   # working-VM helper (clone, up, ssh, destroy)
 ├── debian/
 │   ├── README.md           # distro specifics (preseed, versions, hosts)
 │   ├── http/debian.cfg.pkrtpl.hcl  # shared Debian preseed template,
@@ -35,9 +37,9 @@ distro's `http/` dir. Adding a version: add `<distro>/<ver>/`.
   `run.sh` applies it to every template automatically.
 - `~/.config/packer/secrets.pkrvars.hcl` holds tokens/passwords, loaded
   after it so real secrets always win.
-- Templates declare secret variables with dummy defaults; the var-file
-  overrides them at build time. `git` must never see real secrets
-  (see `.gitignore`).
+- Password variables declare NO defaults and fail validation without
+  a var-file; tuning knobs fall back to `variables.pkr.hcl` defaults.
+  `git` must never see real secrets (see `.gitignore`).
 
 ## Building
 
@@ -55,6 +57,23 @@ Always run from the repo root so relative `http_content` paths resolve:
 # e.g. ./run.sh debian/13/proxmox -only='*.debian*'
 # -f removes previous output and unregisters an existing VirtualBox VM first
 ```
+
+## Working VMs (`vm.sh`)
+
+Clone a `packer-*` template into a throwaway working VM (VirtualBox):
+
+```bash
+./vm.sh up                    # default name "dev", SSH on localhost:2222
+./vm.sh -n dnstest -p 2223 up # custom name and SSH port
+./vm.sh -n dnstest ssh        # ssh as linux@127.0.0.1
+./vm.sh -n dnstest shutdown   # ACPI shutdown, power off after 60s
+./vm.sh -n dnstest destroy    # delete the VM including its disk
+./vm.sh -n dnstest status
+./vm.sh list                  # all VMs with running state
+```
+
+On first `up` for a name, pick one of the registered `packer-*`
+templates to clone; the SSH forward (`-p`) is (re)applied on every `up`.
 
 Validate without building (dummy secret):
 
@@ -96,8 +115,8 @@ Template defaults reference the `packer@pve` service user, not
 
 ### VirtualBox (always `localhost`)
 
-No API tokens, no var-file needed for credentials. Requirements on the
-build machine:
+No API tokens, but the shared var-file is still required (passwords have
+no defaults). Requirements on the build machine:
 
 - VirtualBox + Extension Pack installed.
 - `packer` with the `virtualbox-iso` builder (bundled plugin).

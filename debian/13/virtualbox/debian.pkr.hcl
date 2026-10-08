@@ -17,16 +17,6 @@ variable "iso_checksum" {
   default = "sha256:a7ef94ac2fb9a7fec454552abd629b7cc9d5155c886165a45649f5ce6167e355"
 }
 
-variable "disk_size" {
-  type    = number
-  default = 20000
-}
-
-variable "ssh_username" {
-  type    = string
-  default = "debian"
-}
-
 variable "vm_name" {
   type    = string
   default = "packer-debian-13"
@@ -44,14 +34,15 @@ source "virtualbox-iso" "debian" {
   memory = var.memory
 
   hard_drive_interface = "sata"
-  disk_size            = var.disk_size
+  disk_size            = var.disk_size_vbox
   iso_interface        = "sata"
   output_directory     = "output/debian/13/virtualbox"
   keep_registered      = true
 
   http_content = {
     "/debian.cfg" = templatefile("../../http/debian.cfg.pkrtpl.hcl", {
-      password = var.ssh_password
+      username = var.linux_user_name
+      password = var.linux_user_password
     })
   }
   boot_command = [
@@ -71,11 +62,11 @@ source "virtualbox-iso" "debian" {
     "boot<enter>"
   ]
 
-  ssh_username = var.ssh_username
-  ssh_password = var.ssh_password
+  ssh_username = var.linux_user_name
+  ssh_password = var.linux_user_password
   ssh_timeout  = "30m"
 
-  shutdown_command = "echo '${var.ssh_password}' | sudo -S shutdown -P now"
+  shutdown_command = "echo '${var.linux_user_password}' | sudo -S shutdown -P now"
 
   guest_additions_mode = "upload"
   vboxmanage = [

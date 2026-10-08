@@ -20,21 +20,6 @@ variable "iso_checksum" {
   default = "none"
 }
 
-variable "disk_size" {
-  type    = number
-  default = 20000
-}
-
-variable "ssh_username" {
-  type    = string
-  default = "root"
-}
-
-variable "arch_user" {
-  type    = string
-  default = "arch"
-}
-
 variable "vm_name" {
   type    = string
   default = "packer-arch"
@@ -52,7 +37,7 @@ source "virtualbox-iso" "arch" {
   memory = var.memory
 
   hard_drive_interface = "sata"
-  disk_size            = var.disk_size
+  disk_size            = var.disk_size_vbox
   iso_interface        = "sata"
   output_directory     = "output/arch/rolling/virtualbox"
   keep_registered      = true
@@ -62,12 +47,12 @@ source "virtualbox-iso" "arch" {
   # so Packer can connect; the installer script runs over that session.
   boot_command = [
     "<wait60s>",
-    "echo 'root:${var.ssh_password}' | chpasswd<enter>",
+    "echo '${var.root_user_name}:${var.root_user_password}' | chpasswd<enter>",
     "systemctl start sshd<enter>"
   ]
 
-  ssh_username = var.ssh_username
-  ssh_password = var.ssh_password
+  ssh_username = var.root_user_name
+  ssh_password = var.root_user_password
   ssh_timeout  = "30m"
 
   shutdown_command = "systemctl poweroff"
@@ -87,9 +72,10 @@ build {
   # the build.
   provisioner "shell" {
     environment_vars = [
-      "ROOT_PASSWORD=${var.ssh_password}",
-      "ARCH_USER=${var.arch_user}",
-      "ARCH_PASSWORD=${var.arch_password}"
+      "ROOT_USER=${var.root_user_name}",
+      "ROOT_PASSWORD=${var.root_user_password}",
+      "LINUX_USER=${var.linux_user_name}",
+      "LINUX_PASSWORD=${var.linux_user_password}"
     ]
     script = "arch/http/install.sh"
   }

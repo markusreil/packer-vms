@@ -7,12 +7,12 @@ config once; each `<distro>/<ver>/<host>/` owns only its builder template.
 
 ```text
 .
-├── README.md, AGENTS.md, run.sh, common.pkrvars.hcl, variables.pkr.hcl
+├── README.md, AGENTS.md, run.sh, vm.sh, common.pkrvars.hcl, variables.pkr.hcl
 ├── debian/README.md, debian/http/debian.cfg.pkrtpl.hcl, debian/13/<host>/debian.pkr.hcl
 └── arch/README.md, arch/http/install.sh, arch/rolling/virtualbox/arch.pkr.hcl
 ```
 
-Shared declarations (`ssh_password`, `arch_password`, `cpus`, `memory`)
+Shared declarations (`root_user_*`, `linux_user_*`, `disk_size_*`, `cpus`, `memory`)
 live once in root `variables.pkr.hcl`, symlinked into each template dir.
 Passwords have no defaults: values come only from `common.pkrvars.hcl`
 (via `run.sh`); tuning knobs fall back to the file defaults.
@@ -37,4 +37,4 @@ Passwords have no defaults: values come only from `common.pkrvars.hcl`
    `packer validate -var-file=common.pkrvars.hcl
    -var 'pve4_packer_token_secret=dummy' debian/13/proxmox`
    and `packer validate -var-file=common.pkrvars.hcl
-   debian/13/virtualbox`.
+   debian/13/virtualbox` (same shape for `arch/rolling/virtualbox`).

@@ -11,8 +11,8 @@ d-i mirror/http/directory string /debian
 d-i mirror/http/proxy string
 
 d-i passwd/root-login boolean false
-d-i passwd/user-fullname string Debian User
-d-i passwd/username string debian
+d-i passwd/user-fullname string Linux User
+d-i passwd/username string ${username}
 d-i passwd/user-password password ${password}
 d-i passwd/user-password-again password ${password}
 
@@ -69,7 +69,7 @@ d-i grub-installer/bootdev string default
 d-i grub-installer/force-efi-extra-removable boolean true
 
 d-i preseed/late_command string \
-    echo 'debian ALL=(ALL) NOPASSWD: ALL' > /target/etc/sudoers.d/debian; \
-    chmod 0440 /target/etc/sudoers.d/debian
+    echo '${username} ALL=(ALL) NOPASSWD: ALL' > /target/etc/sudoers.d/${username}; \
+    chmod 0440 /target/etc/sudoers.d/${username}
 
 d-i finish-install/reboot_in_progress note

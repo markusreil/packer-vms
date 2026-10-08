@@ -4,9 +4,10 @@
 # exports the disk afterwards.
 set -euo pipefail
 
+ROOT_USER="${ROOT_USER:-root}"
 ROOT_PASSWORD="${ROOT_PASSWORD:?ROOT_PASSWORD must be set}"
-ARCH_USER="${ARCH_USER:-arch}"
-ARCH_PASSWORD="${ARCH_PASSWORD:-arch}"
+LINUX_USER="${LINUX_USER:-linux}"
+LINUX_PASSWORD="${LINUX_PASSWORD:-${ARCH_PASSWORD:-changeme}}"
 
 DISK=/dev/sda
 EFI_PART=${DISK}1
@@ -40,9 +41,9 @@ cat > /mnt/etc/hosts <<'EOF'
 127.0.1.1 arch-template
 EOF
 
-echo "root:${ROOT_PASSWORD}" | arch-chroot /mnt chpasswd
-arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$ARCH_USER"
-echo "${ARCH_USER}:${ARCH_PASSWORD}" | arch-chroot /mnt chpasswd
+echo "${ROOT_USER}:${ROOT_PASSWORD}" | arch-chroot /mnt chpasswd
+arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$LINUX_USER"
+echo "${LINUX_USER}:${LINUX_PASSWORD}" | arch-chroot /mnt chpasswd
 echo '%wheel ALL=(ALL) NOPASSWD: ALL' > /mnt/etc/sudoers.d/wheel
 chmod 440 /mnt/etc/sudoers.d/wheel
 

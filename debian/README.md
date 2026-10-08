@@ -1,7 +1,7 @@
 # Debian
 
 Unattended Debian installs via preseed (`http/debian.cfg.pkrtpl.hcl`, rendered
-with the shared login password at build time), shared by all
+with the shared linux username and password at build time), shared by all
 Debian versions and hosts in this repo.
 
 ## Versions
@@ -14,9 +14,9 @@ Debian versions and hosts in this repo.
 
 - Locale `en_US`, keymap `us`, hostname `debian-template`, domain
   `home.arpa`, UTC clock.
-- User `debian` / password `changeme` (shared default from root
+- User `linux` / password `changeme` (shared default from root
   `common.pkrvars.hcl`; change post-clone or via provisioner),
-  passwordless sudo via `late_command` → `/etc/sudoers.d/debian`.
+  passwordless sudo via `late_command` → `/etc/sudoers.d/linux`.
 - EFI layout: 512MB EFI partition, no swap, rest on ext4 `/`.
 - One merged `pkgsel/include`: `openssh-server qemu-guest-agent sudo curl
   ca-certificates` (duplicate keys overwrite, so keep it single).

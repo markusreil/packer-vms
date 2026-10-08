@@ -4,17 +4,34 @@
 # ../../../variables.pkr.hcl). Passwords intentionally have NO defaults:
 # root common.pkrvars.hcl is their only source. Tuning knobs keep defaults
 # below.
-variable "ssh_password" {
+variable "root_user_name" {
+  type    = string
+  default = "root"
+}
+
+variable "root_user_password" {
   type      = string
   sensitive = true
 }
 
-# Only the Arch template consumes this (its installer script takes root and
-# user passwords as separate inputs); declared here so its value also lives
-# only in common.pkrvars.hcl.
-variable "arch_password" {
+variable "linux_user_name" {
+  type    = string
+  default = "linux"
+}
+
+variable "linux_user_password" {
   type      = string
   sensitive = true
+}
+
+variable "disk_size_vbox" {
+  type    = number
+  default = 20000
+}
+
+variable "disk_size_proxmox" {
+  type    = string
+  default = "20G"
 }
 
 variable "cpus" {
