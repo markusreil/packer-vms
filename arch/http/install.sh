@@ -47,12 +47,6 @@ echo "${LINUX_USER}:${LINUX_PASSWORD}" | arch-chroot /mnt chpasswd
 echo '%wheel ALL=(ALL) NOPASSWD: ALL' > /mnt/etc/sudoers.d/wheel
 chmod 440 /mnt/etc/sudoers.d/wheel
 
-# vmwgfx (VMware graphics) claims the PCI graphics device before vboxvideo
-# loads, breaking VirtualBox graphics. Blacklist it in modprobe.d and on
-# the kernel command line (early boot, before initramfs udev runs).
-echo 'blacklist vmwgfx' > /mnt/etc/modprobe.d/vmwgfx.conf
-arch-chroot /mnt sh -c 'grep -q "modprobe.blacklist=vmwgfx" /etc/default/grub || sed -i '\''s/^GRUB_CMDLINE_LINUX_DEFAULT="\([^"]*\)"/GRUB_CMDLINE_LINUX_DEFAULT="\1 modprobe.blacklist=vmwgfx"/'\'' /etc/default/grub'
-
 arch-chroot /mnt grub-install --target=x86_64-efi --efi-directory=/boot \
     --bootloader-id=GRUB --removable
 arch-chroot /mnt grub-mkconfig -o /boot/grub/grub.cfg
