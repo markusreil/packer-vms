@@ -1,3 +1,6 @@
 .idea
 output/
+# Local install media (large, per-machine downloads; never committed).
+*.iso
+iso/
 

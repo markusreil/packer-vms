@@ -73,9 +73,12 @@ ensure_forward() {
     echo "SSH forwarded: localhost:$PORT -> $NAME:22 (user linux)"
 }
 
+registered_templates() {
+    VBoxManage list vms | grep -o '"packer-[^"]*"' | tr -d '"' || true
+}
+
 pick_template() {
-    mapfile -t TEMPLATES < <(VBoxManage list vms \
-        | grep -o '"packer-[^"]*"' | tr -d '"' || true)
+    mapfile -t TEMPLATES < <(registered_templates)
     if [ "${#TEMPLATES[@]}" -eq 0 ]; then
         echo "No packer-* template VMs found. Build one first (see ./run.sh --help)." >&2
         exit 1
@@ -93,13 +96,48 @@ pick_template() {
     done
 }
 
+# No packer-* VM registered (VDIs deleted or fresh host): import the portable
+# OVF export directly under the requested VM name. The import IS the new VM,
+# so no second full-disk clone follows it.
+import_ovf_as() {
+    local TARGET="$1"
+    mapfile -t OVFS < <(find output -name '*.ovf' 2>/dev/null | sort || true)
+    if [ "${#OVFS[@]}" -eq 0 ]; then
+        return
+    fi
+    local OVF=""
+    if [ "${#OVFS[@]}" -eq 1 ]; then
+        OVF="${OVFS[0]}"
+    else
+        echo "No registered template; pick an export to import:" >&2
+        select OVF in "${OVFS[@]}"; do
+            if [ -n "${OVF:-}" ]; then
+                break
+            fi
+        done
+    fi
+    echo "Importing $OVF ..." >&2
+    # Keep import progress on stderr so calling contexts stay clean.
+    VBoxManage import "$OVF" --vsys 0 --vmname "$TARGET" >&2
+}
+
 cmd_up() {
     if vm_exists "$NAME"; then
         echo "VM $NAME exists."
     else
-        SRC="$(pick_template)"
-        echo "Cloning $SRC -> $NAME ..."
-        VBoxManage clonevm "$SRC" --name "$NAME" --register
+        # A leftover machine folder for an unregistered VM blocks cloning
+        # (same orphan problem as imports); it holds no usable VM.
+        if [ -d "$HOME/VirtualBox VMs/$NAME" ]; then
+            echo "Removing orphaned machine folder for $NAME ..." >&2
+            rm -rf "$HOME/VirtualBox VMs/$NAME"
+        fi
+        if [ -z "$(registered_templates)" ] && [ -n "$(find output -name '*.ovf' 2>/dev/null)" ]; then
+            import_ovf_as "$NAME"
+        else
+            SRC="$(pick_template)"
+            echo "Cloning $SRC -> $NAME ..."
+            VBoxManage clonevm "$SRC" --name "$NAME" --register
+        fi
     fi
     ensure_forward
     if vm_running "$NAME"; then
